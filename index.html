@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Connect to WiFi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     VIRA · SIGNAL — Guest WiFi Capture Portal
+     CONFIG: change the values in :root and the .brand block below
+     per client. Backend endpoint is in the JS at the bottom.
+     ============================================================ */
+  :root{
+    --bg:#070708;
+    --bg-2:#0e0e11;
+    --ink:#f4f1ea;
+    --ink-dim:#9b958a;
+    --gold:#c9a24b;
+    --gold-soft:#e6c878;
+    --line:#1c1c20;
+    --ok:#5a9e98;
+    --radius:18px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Outfit',sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100dvh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:22px;
+    overflow-x:hidden;
+    position:relative;
+  }
+  /* atmospheric background */
+  .glow{position:fixed;border-radius:50%;filter:blur(90px);opacity:.5;pointer-events:none;z-index:0;}
+  .glow-1{width:420px;height:420px;background:radial-gradient(circle,#3a2e12,transparent 70%);top:-140px;right:-120px;}
+  .glow-2{width:380px;height:380px;background:radial-gradient(circle,#10302d,transparent 70%);bottom:-150px;left:-130px;}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .card{
+    position:relative;z-index:2;
+    width:100%;max-width:430px;
+    background:linear-gradient(180deg,rgba(20,20,24,.92),rgba(10,10,12,.92));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:40px 30px 34px;
+    box-shadow:0 40px 120px -30px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+    animation:rise .9s cubic-bezier(.16,1,.3,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(26px) scale(.98);}to{opacity:1;transform:none;}}
+
+  /* brand */
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:30px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-soft));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;color:#1a1407;font-size:18px;
+    box-shadow:0 6px 18px -4px rgba(201,162,75,.5);
+  }
+  .brand-name{font-family:'Fraunces',serif;font-size:19px;letter-spacing:.3px;}
+  .brand-name em{font-style:italic;color:var(--gold-soft);}
+
+  .eyebrow{
+    font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  }
+  .eyebrow::before{content:"";width:18px;height:1px;background:var(--gold);display:inline-block;}
+
+  h1{
+    font-family:'Fraunces',serif;font-weight:400;
+    font-size:30px;line-height:1.12;letter-spacing:-.5px;margin-bottom:10px;
+  }
+  h1 em{font-style:italic;color:var(--gold-soft);}
+  .sub{color:var(--ink-dim);font-size:14.5px;line-height:1.55;margin-bottom:26px;}
+
+  /* form */
+  .field{margin-bottom:15px;position:relative;}
+  label{display:block;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:7px;}
+  input{
+    width:100%;background:#08080a;border:1px solid var(--line);
+    border-radius:12px;padding:14px 15px;color:var(--ink);
+    font-family:'Outfit',sans-serif;font-size:15.5px;transition:.25s;
+  }
+  input::placeholder{color:#54504a;}
+  input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,162,75,.13);}
+  input.err{border-color:#a8503f;}
+
+  .consent{display:flex;gap:10px;align-items:flex-start;margin:18px 0 22px;cursor:pointer;}
+  .consent input{width:18px;height:18px;flex:0 0 18px;margin-top:2px;accent-color:var(--gold);cursor:pointer;}
+  .consent span{font-size:12.5px;color:var(--ink-dim);line-height:1.5;}
+
+  button.cta{
+    width:100%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--gold),var(--gold-soft));
+    color:#160f02;font-family:'Outfit',sans-serif;font-weight:600;font-size:15.5px;
+    letter-spacing:.02em;padding:16px;border-radius:12px;transition:.2s;
+    box-shadow:0 14px 34px -10px rgba(201,162,75,.55);
+  }
+  button.cta:active{transform:scale(.985);}
+  button.cta:disabled{opacity:.6;cursor:wait;}
+
+  .foot{margin-top:22px;text-align:center;font-size:10.5px;letter-spacing:.1em;color:#46433d;text-transform:uppercase;}
+  .foot span{color:var(--gold);}
+
+  /* success state */
+  .success{display:none;text-align:center;animation:rise .7s cubic-bezier(.16,1,.3,1) both;}
+  .success.show{display:block;}
+  .form-wrap.hide{display:none;}
+  .check{
+    width:62px;height:62px;margin:0 auto 22px;border-radius:50%;
+    background:rgba(90,158,152,.12);border:1px solid rgba(90,158,152,.4);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .check svg{width:30px;height:30px;stroke:var(--ok);stroke-width:2.5;fill:none;
+    stroke-dasharray:40;stroke-dashoffset:40;animation:draw .6s .2s forwards;}
+  @keyframes draw{to{stroke-dashoffset:0;}}
+  .wifi-box{
+    background:#08080a;border:1px solid var(--line);border-radius:14px;
+    padding:20px;margin:22px 0 6px;text-align:left;
+  }
+  .wifi-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);}
+  .wifi-row:last-child{border-bottom:none;}
+  .wifi-row .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);}
+  .wifi-row .v{font-family:'Fraunces',serif;font-size:19px;color:var(--gold-soft);}
+  .copy-hint{font-size:12px;color:var(--ink-dim);margin-top:14px;}
+</style>
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="grain"></div>
+
+  <div class="card">
+    <!-- ===== EDIT PER CLIENT: brand name + initial ===== -->
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div class="brand-name">The Atrium <em>Lounge</em></div>
+    </div>
+
+    <div class="form-wrap" id="formWrap">
+      <div class="eyebrow">Complimentary WiFi</div>
+      <h1>One step to <em>connect.</em></h1>
+      <p class="sub">Enter your details to unlock high-speed guest WiFi. It takes five seconds.</p>
+
+      <div class="field">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" placeholder="Jordan Wells" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+      </div>
+      <div class="field">
+        <label for="phone">Mobile (optional)</label>
+        <input type="tel" id="phone" placeholder="(555) 000-0000" autocomplete="tel" inputmode="tel">
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" id="consent">
+        <span>I'm happy to receive occasional offers and updates by email. Unsubscribe anytime.</span>
+      </label>
+
+      <button class="cta" id="submitBtn">Connect to WiFi →</button>
+      <div class="foot">Powered by <span>VIRA</span> · Your data stays with the venue</div>
+    </div>
+
+    <!-- success / password reveal -->
+    <div class="success" id="success">
+      <div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
+      <div class="eyebrow" style="justify-content:center;">You're connected</div>
+      <h1>Welcome <em>in.</em></h1>
+      <p class="sub">Here's your WiFi. Tap and hold the password to copy it.</p>
+      <div class="wifi-box">
+        <!-- ===== EDIT PER CLIENT: the actual WiFi name + password ===== -->
+        <div class="wifi-row"><span class="k">Network</span><span class="v" id="wnet">Atrium_Guest</span></div>
+        <div class="wifi-row"><span class="k">Password</span><span class="v" id="wpass">welcome2024</span></div>
+      </div>
+      <p class="copy-hint">Open your WiFi settings, choose the network above, and enter the password.</p>
+    </div>
+  </div>
+
+<script>
+  /* ============================================================
+     BACKEND CONNECTION
+     Replace ENDPOINT with your Google Apps Script Web App URL.
+     The WiFi credentials shown on success are set in the HTML
+     above (#wnet / #wpass) — edit those per client.
+     ============================================================ */
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbw8rclWKbMoBI_MIUo42vjYy15meDYVtzRp5QwQrfcR9zQwt3hcYu5MOwHVN31UTV_N";
+
+  const $ = id => document.getElementById(id);
+  const btn = $("submitBtn");
+
+  function valid(){
+    let ok = true;
+    const name = $("name"), email = $("email");
+    [name,email].forEach(f=>f.classList.remove("err"));
+    if(name.value.trim().length < 2){ name.classList.add("err"); ok=false; }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim())){ email.classList.add("err"); ok=false; }
+    return ok;
+  }
+
+  btn.addEventListener("click", async () => {
+    if(!valid()) return;
+    btn.disabled = true;
+    btn.textContent = "Connecting…";
+
+    const payload = {
+      type: "capture",
+      name:  $("name").value.trim(),
+      email: $("email").value.trim(),
+      phone: $("phone").value.trim(),
+      consent: $("consent").checked,
+      ts: new Date().toISOString(),
+      venue: document.querySelector(".brand-name").innerText.trim()
+    };
+
+    try{
+      // 'no-cors' lets the browser POST to Apps Script without a CORS error.
+      // We don't read the response; we just fire the data and reveal WiFi.
+      await fetch(ENDPOINT, {
+        method:"POST",
+        mode:"no-cors",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+    }catch(e){
+      console.warn("capture failed, revealing WiFi anyway", e);
+    }
+
+    // Always reveal WiFi so a network hiccup never traps a guest.
+    $("formWrap").classList.add("hide");
+    $("success").classList.add("show");
+  });
+
+  // submit on Enter from the email field
+  $("email").addEventListener("keydown", e => { if(e.key==="Enter") btn.click(); });
+</script>
+</body>
+</html>
